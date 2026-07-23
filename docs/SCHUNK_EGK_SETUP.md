@@ -53,3 +53,9 @@ Installation → General → Tool I/O:
 - Parity: Even
 - Stop Bits: One
 (These match SCHUNK's documented Modbus RTU
+## Verified working (July 23)
+- New fingertip (reprinted after collision) mounted, tested successfully
+- Release, Outside Grip, Move to Position all confirmed working via
+  PolyScope Testing tab
+- Max Position 75.0mm confirmed safe with new fingertip (no collision)
+- Grip force test confirmed reasonable
