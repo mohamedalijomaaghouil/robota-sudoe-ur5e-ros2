@@ -47,7 +47,30 @@ robota-sudoe-ur5e-ros2/
 ├── fastdds_no_shm.xml                 ← FastDDS config (fixes root/user DDS isolation)
 └── docs/                             ← Additional documentation
 ```
+## ⚠️ CRITICAL STARTUP ORDER
 
+The following order is **mandatory**. Doing steps out of sequence will cause connection failures or dangerous movements.
+
+1. **Power on robot** → Remote Control → Normal status.
+2. **Terminal 1**: Start arm controllers.
+3. **Terminal 2**: Start Bota sensor driver (optional, for future use).
+4. **Terminal 3**: Load and play `ext_control.urp`.
+5. **Terminal 3**: Switch to `forward_velocity_controller` **BEFORE** running admittance.
+6. **Terminal 3**: Start admittance node with `sensor:=UR`.
+7. **Teaching**: Use `gripper_incremental.py` ('o'/'c') while guiding the arm.
+8. **Recording**: `ros2 bag record` with all topics.
+9. **Replay**: Stop admittance, switch to `scaled_joint_trajectory_controller`, position arm at start, run `replay_with_gripper.py`.
+
+---
+
+## Working Configuration
+
+| Component | Configuration |
+|-----------|---------------|
+| Sensor | UR internal sensor (`sensor:=UR`) |
+| Admittance parameters | `M_trans=15.0, M_rot=1.0, c=30.0, F_alpha=0.03, V_alpha=0.05, dead_cart=3.0, dead_rot=100.0, max_joint_vel=0.15` |
+| Replay | `replay_with_gripper.py` with `step = //10` and `--speed 1.0` |
+| Gripper | `gripper_incremental.py` for teaching, automated during replay |
 ---
 
 ## Software Stack (installed on onboard PC)

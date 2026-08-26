@@ -15,15 +15,20 @@ class BagReplayWithGripper(Node):
         super().__init__('bag_replay_with_gripper')
         self.traj_pub = self.create_publisher(JointTrajectory, '/scaled_joint_trajectory_controller/joint_trajectory', 10)
         self.gripper_pub = self.create_publisher(Float64, '/gripper/command', 10)
-        
-        if len(sys.argv) > 1:
+
+        # Gestion des arguments
+        self.speed = 1.0
+        if len(sys.argv) > 1 and sys.argv[1] == '--speed' and len(sys.argv) > 2:
+            self.speed = float(sys.argv[2])
+            self.bag_path = sys.argv[3] if len(sys.argv) > 3 else 'demolding_final_3/demolding_final_3_0.mcap'
+        elif len(sys.argv) > 1:
             self.bag_path = sys.argv[1]
         else:
             self.bag_path = 'demolding_final_3/demolding_final_3_0.mcap'
-        
+
         self.joint_names = ['shoulder_pan_joint', 'shoulder_lift_joint', 'elbow_joint',
                             'wrist_1_joint', 'wrist_2_joint', 'wrist_3_joint']
-        self.get_logger().info(f'Loading bag: {self.bag_path}')
+        self.get_logger().info(f'Loading bag: {self.bag_path}, speed: {self.speed}x')
         self.load_and_publish()
 
     def load_and_publish(self):
@@ -62,34 +67,37 @@ class BagReplayWithGripper(Node):
             self.get_logger().error('No joint states found!')
             return
 
-        # Publier la trajectoire du bras
-        step = max(1, len(joint_positions) // 20)  # ← tu peux ajuster ici (20, 15, 10, etc.)
+        # Ajuster le nombre de points pour la fluidité (step = //10 donne ~50 points)
+        step = max(1, len(joint_positions) // 10)
+        #step = 10 
         traj = JointTrajectory()
         traj.joint_names = self.joint_names
         points = []
         for i in range(0, len(joint_positions), step):
             pt = JointTrajectoryPoint()
             pt.positions = joint_positions[i]
-            pt.velocities = [0.0]*6
-            pt.accelerations = [0.0]*6
-            pt.time_from_start.sec = int(timestamps[i])
-            pt.time_from_start.nanosec = int((timestamps[i] - int(timestamps[i])) * 1e9)
+            pt.velocities = [0.0] * 6
+            pt.accelerations = [0.0] * 6
+            t_scaled = timestamps[i] / self.speed
+            pt.time_from_start.sec = int(t_scaled)
+            pt.time_from_start.nanosec = int((t_scaled - int(t_scaled)) * 1e9)
             points.append(pt)
         traj.points = points
-        self.get_logger().info(f'Publishing trajectory with {len(points)} points')
+        self.get_logger().info(f'Publishing trajectory with {len(points)} points (speed {self.speed}x)')
         self.traj_pub.publish(traj)
 
-        # Publier les commandes de la pince
+        # Publier les commandes de la pince avec le timing ajusté
         if gripper_commands:
             self.get_logger().info(f'Publishing {len(gripper_commands)} gripper commands')
             start_time_real = time.time()
             for t_rel, pos in gripper_commands:
-                while time.time() - start_time_real < t_rel:
+                t_scaled = t_rel / self.speed
+                while time.time() - start_time_real < t_scaled:
                     rclpy.spin_once(self, timeout_sec=0.01)
                 msg = Float64()
                 msg.data = pos
                 self.gripper_pub.publish(msg)
-                self.get_logger().info(f'Gripper at {pos:.1f} mm at t={t_rel:.1f}s')
+                self.get_logger().info(f'Gripper at {pos:.1f} mm at t={t_scaled:.1f}s')
         else:
             self.get_logger().info('No gripper commands found in bag')
 
