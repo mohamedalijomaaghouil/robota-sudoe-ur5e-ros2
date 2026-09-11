@@ -348,3 +348,11 @@ This is normal. The `fastdds_no_shm.xml` file fixes the root/user DDS isolation.
 - **Co-supervisor:** Saltanat Seitzhan — PhD researcher, CiTIUS
 - **Developer:** Mohamed Ali Jomaa Ghouil — SIGMA Clermont / ENISo (May–Sept 2026)
 - **Mechanical design:** Marouane Belhaddade Zanati — SIGMA Clermont (May–Sept 2026)
+
+## OnRobot HEX-E v2 External Sensor
+
+The HEX-E v2 EtherCAT integration, calibration datasets, and continuation plan are in a separate repository:
+[robota-sudoe-hex-e-v2](https://github.com/mohamedalijomaaghouil/robota-sudoe-hex-e-v2)
+
+The `bota_ft_sensor_driver/` folder in this repo contains the modified driver (7 files) that enables reading the OnRobot sensor.
+Key change: `config/bota_hex_e.json` → `sinc_length: 20` (was 341).
